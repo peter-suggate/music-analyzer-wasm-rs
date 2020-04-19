@@ -14,10 +14,11 @@ crate-type = ["cdylib", "rlib"]
 default = ["console_error_panic_hook"]
 
 [dependencies]
-wasm-bindgen = "0.2"
-cqt = { git = "https://github.com/alexjago/cqt" }
+serde_derive = "^1.0.59"
+js-sys = "0.3.37"
 circular-queue = "0.2.4"
-
+# pitch-detection = { git = "https://github.com/peter-suggate/pitch-detection" }
+pitch-detection = { path = "../pitch-detection" }
 
 # The `console_error_panic_hook` crate provides better debugging of panics by
 # logging them with `console.error`. This is great for development, but requires
@@ -31,6 +32,14 @@ console_error_panic_hook = { version = "0.1.6", optional = true }
 #
 # Unfortunately, `wee_alloc` requires nightly Rust when targeting wasm for now.
 wee_alloc = { version = "0.4.5", optional = true }
+
+[dependencies.wasm-bindgen]
+version = "^0.2"
+features = ["serde-serialize"]
+
+[dependencies.serde]
+version = "^1.0.59"
+features = ["derive"]
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.10"

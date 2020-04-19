@@ -1,9 +1,11 @@
+pub mod test_utils;
 mod utils;
 
 use circular_queue::CircularQueue;
-use cqt::naive_cqt_octaves;
 use std::option::*;
 use wasm_bindgen::prelude::*;
+
+pub mod pitch_detector;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
@@ -11,138 +13,71 @@ use wasm_bindgen::prelude::*;
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
-fn audio_float_to_signed16(x: &f32) -> i16 {
-  std::cmp::max(std::cmp::min(32767 * *x as i16, 32767), -32767)
-}
-
-#[wasm_bindgen]
-pub struct MusicAnalyzer {
-  audio_samples: Vec<i16>,
-}
-
-// Once sufficient samples have been obtained, a MusicAnalyzer can be instantiated which
-// provides metrics.
-#[wasm_bindgen]
-impl MusicAnalyzer {
-  pub fn new(recent_audio_samples: Vec<i16>) -> MusicAnalyzer {
-    MusicAnalyzer {
-      audio_samples: recent_audio_samples,
-    }
-  }
-
-  pub fn cqt_octaves(&self) -> Vec<u16> {
-    let rate: f64 = 44100.0;
-    naive_cqt_octaves(
-      220.0,
-      3,
-      rate,
-      12,
-      &self.audio_samples,
-      &cqt::window::hamming,
-    )
-  }
-
-  pub fn num_samples(&self) -> usize {
-    return self.audio_samples.len();
-  }
-}
+const AUDIO_SAMPLES_PER_CHUNK: usize = 128;
+const MIN_CHUNKS_FOR_ANALYSIS: usize = 16;
 
 #[wasm_bindgen]
 pub struct AudioSamplesProcessor {
-  recent_audio_samples: CircularQueue<Vec<i16>>,
+  chunk_size: usize,
+  max_stored_chunks: usize,
+
+  recent_audio_sample_f32s: CircularQueue<Vec<f32>>,
 }
 
 #[wasm_bindgen]
 impl AudioSamplesProcessor {
   pub fn new() -> AudioSamplesProcessor {
-    const MAX_CHUNKS: usize = 16;
-
     AudioSamplesProcessor {
-      recent_audio_samples: CircularQueue::with_capacity(MAX_CHUNKS),
+      // Matching the web audio worklet chunk size
+      chunk_size: AUDIO_SAMPLES_PER_CHUNK,
+
+      max_stored_chunks: MIN_CHUNKS_FOR_ANALYSIS,
+
+      recent_audio_sample_f32s: CircularQueue::with_capacity(MIN_CHUNKS_FOR_ANALYSIS),
     }
   }
 
   pub fn add_samples(&mut self, sample_f32s: Vec<f32>) {
-    const EXPECTED_SAMPLES_PER_CHUNK: usize = 128;
-
-    if sample_f32s.len() < EXPECTED_SAMPLES_PER_CHUNK {
+    if sample_f32s.len() != self.chunk_size {
       panic!(format!(
         "add_samples() requires {} samples, instead got {}",
-        EXPECTED_SAMPLES_PER_CHUNK,
+        self.chunk_size,
         sample_f32s.len()
       ));
     }
 
-    let sample_i16s = sample_f32s.iter().map(audio_float_to_signed16).collect();
-
-    self.recent_audio_samples.push(sample_i16s);
+    self.recent_audio_sample_f32s.push(sample_f32s);
   }
 
-  fn has_sufficient_samples(&self) -> bool {
-    const MIN_CHUNKS_FOR_ANALYSIS: usize = 8;
-
-    self.recent_audio_samples.len() >= MIN_CHUNKS_FOR_ANALYSIS
+  pub fn has_sufficient_samples(&self) -> bool {
+    self.recent_audio_sample_f32s.len() >= self.max_stored_chunks
   }
 
-  pub fn create_analyzer(&self) -> Option<MusicAnalyzer> {
-    match self.has_sufficient_samples() {
-      true => Some(MusicAnalyzer::new(
-        self
-          .recent_audio_samples
-          .iter()
-          .flat_map(|vec| vec.iter())
-          .cloned()
-          .collect(),
-      )),
-      false => None,
-    }
+  pub fn create_pitch_detector(&self) -> Option<pitch_detector::PitchDetector> {
+    const WINDOW: usize = 1024;
+    Some(pitch_detector::PitchDetector::new(
+      pitch_detector::make_params(WINDOW),
+    ))
   }
-}
 
-#[wasm_bindgen]
-pub fn cqt_octaves(audio_sample_f32s: Vec<f32>) -> Vec<u16> {
-  let rate: f64 = 44100.0;
-  // let mut circular_buffer = [0_i16; 22050];
+  pub fn set_latest_samples_on(&self, detector: &mut pitch_detector::PitchDetector) {
+    detector.set_audio_samples(self.get_latest_samples())
+  }
 
-  // // saw wave combination of all 12 tones in octave
-  // println!("saw wave combination: (do, mi, le) ");
-  // let root_freq: f64 = 110.0;
-  // for i in 0..22050 {
-  //     let mut addend: f64;
-  //     for j in 0..3 {
-  //         let freq = root_freq * (2.0_f64).powf((j as f64) / 3.0);
-  //         addend = (32768.0 / 3.0)
-  //             * (2.0 * ((i as f64 * freq / rate) - (0.5 + (i as f64 * freq / rate)).floor()));
-  //         circular_buffer[i] += addend as i16;
-  //     }
-  // }
-
-  let audio_sample_i16s: Vec<_> = audio_sample_f32s
-    .iter()
-    .map(audio_float_to_signed16)
-    .collect();
-
-  // naive_cqt_octaves(220.0, 3, rate, 12, &circular_buffer, &cqt::window::hamming)
-  naive_cqt_octaves(
-    220.0,
-    3,
-    rate,
-    12,
-    &audio_sample_i16s[..],
-    &cqt::window::hamming,
-  )
+  pub fn get_latest_samples(&self) -> Vec<f32> {
+    self
+      .recent_audio_sample_f32s
+      .iter()
+      .rev()
+      .flat_map(|vec| vec.iter())
+      .cloned()
+      .collect()
+  }
 }
 
 #[cfg(test)]
 mod tests {
   use super::*;
-
-  #[test]
-  fn converting_audio_float_to_int() {
-    assert_eq!(audio_float_to_signed16(&0.0), 0);
-    assert_eq!(audio_float_to_signed16(&1.0), 32767);
-    assert_eq!(audio_float_to_signed16(&-1.0), -32767);
-  }
 
   mod adding_samples {
     use super::*;
@@ -157,34 +92,85 @@ mod tests {
     fn adds_samples_if_of_correct_count() {
       AudioSamplesProcessor::new().add_samples(vec![0.0; 128]);
     }
+
+    #[test]
+    fn returns_added_chunks_in_correct_order() {
+      let mut processor = AudioSamplesProcessor::new();
+
+      let mut samples = vec![0.0; 256];
+      for i in 0..2 {
+        let chunk = vec![i as f32; 128];
+        processor.add_samples(chunk);
+
+        samples[(i * 128)..((i + 1) * 128)]
+          .iter_mut()
+          .map(|v| *v = i as f32)
+          .count();
+      }
+
+      assert_eq!(processor.get_latest_samples(), samples);
+    }
+
+    #[test]
+    fn wraps_around_when_max_stored_samples_exceeded() {
+      let mut processor = AudioSamplesProcessor::new();
+
+      // Generate monotonically increasing sample values totalling two times the number
+      // of capacity.
+      const CHUNKS: usize = MIN_CHUNKS_FOR_ANALYSIS * 2;
+      let mut samples = vec![0.0; MIN_CHUNKS_FOR_ANALYSIS * AUDIO_SAMPLES_PER_CHUNK];
+
+      for i in 0..CHUNKS {
+        let chunk = vec![i as f32; AUDIO_SAMPLES_PER_CHUNK];
+        processor.add_samples(chunk);
+
+        if i >= MIN_CHUNKS_FOR_ANALYSIS {
+          samples[((i - processor.max_stored_chunks) * processor.chunk_size)
+            ..((i - processor.max_stored_chunks + 1) * processor.chunk_size)]
+            .iter_mut()
+            .map(|v| *v = i as f32)
+            .count();
+        }
+      }
+
+      assert_eq!(processor.get_latest_samples(), samples);
+    }
   }
 
-  mod music_analyzer_creation {
+  mod pitch_detector_tests {
     use super::*;
 
     #[test]
-    fn returns_none_if_no_samples() {
-      let maybe_analyzer = AudioSamplesProcessor::new().create_analyzer();
-      assert_eq!(maybe_analyzer.is_none(), true);
+    fn returns_one_if_no_samples() {
+      let maybe_analyzer = AudioSamplesProcessor::new().create_pitch_detector();
+      assert_eq!(maybe_analyzer.is_some(), true);
     }
 
     #[test]
-    fn returns_none_if_insufficient_samples() {
-      let maybe_analyzer = AudioSamplesProcessor::new().create_analyzer();
-      assert_eq!(maybe_analyzer.is_none(), true);
-    }
-
-    #[test]
-    fn returns_some_if_sufficient_samples() {
+    fn copies_samples_into_detector() {
       let mut processor = AudioSamplesProcessor::new();
 
-      for _ in 0..8 {
-        processor.add_samples(vec![0.0; 128]);
+      const WINDOW: usize = 1024;
+      let sine_wave_samples = test_utils::sin_signal(440.0, WINDOW * 2, 44100);
+
+      for i in 0..16 {
+        processor.add_samples(sine_wave_samples[(i * 128)..((i + 1) * 128)].to_vec());
       }
 
-      let maybe_analyzer = processor.create_analyzer();
+      let mut detector = processor.create_pitch_detector().unwrap();
 
-      assert_eq!(maybe_analyzer.is_some(), true);
+      processor.set_latest_samples_on(&mut detector);
+
+      let next_pitch = detector.next_pitch(String::from("McLeod")).unwrap();
+
+      assert_eq!(
+        next_pitch,
+        pitch_detector::Pitch {
+          t: 0,
+          frequency: 441.14816,
+          clarity: 0.9018697
+        }
+      )
     }
   }
 }
