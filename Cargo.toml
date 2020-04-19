@@ -1,8 +1,11 @@
 [package]
 name = "music-analyzer-wasm-rs"
+description = "Audio analysis routines to assist with music instrument practice"
 version = "0.1.0"
+repository = "https://github.com/peter-suggate/music-analyzer-wasm-rs"
 authors = ["peter-suggate <petersuggate@gmail.com>"]
 edition = "2018"
+license = "MIT"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
