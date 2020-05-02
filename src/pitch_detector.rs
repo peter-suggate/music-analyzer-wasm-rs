@@ -1,6 +1,6 @@
-use super::*;
 use pitch_detection;
 use serde::{Deserialize, Serialize};
+use wasm_bindgen::prelude::*;
 
 const MAX_WINDOW_SIZE: usize = 8192;
 
@@ -52,7 +52,7 @@ pub struct PitchDetector {
   auto_correlation: Option<Box<dyn pitch_detection::PitchDetector<f32>>>,
   mcleod: Option<Box<dyn pitch_detection::PitchDetector<f32>>>,
   smoothed_mcleod: Option<Box<dyn pitch_detection::PitchDetector<f32>>>,
-  history: Option<pitch_detection::History>,
+  history: Option<pitch_detection::PitchDetectorHistory>,
 }
 
 pub enum DetectorType {
@@ -188,6 +188,9 @@ impl PitchDetector {
       .collect()
   }
 }
+
+#[cfg(test)]
+use super::test_utils;
 
 #[cfg(test)]
 mod tests {
