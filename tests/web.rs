@@ -42,16 +42,31 @@ fn print_detector_state(detector: &pitch_detector::PitchDetector) {
 }
 
 #[wasm_bindgen_test]
+fn returns_error_if_no_samples() {
+  let mut processor = audio_samples_processor::AudioSamplesProcessor::new();
+
+  let mut detector = processor
+    .create_pitch_detector(String::from("McLeod"), 1024)
+    .unwrap();
+
+  let mut result = detector.pitches();
+
+  assert_eq!(result.code(), "not_enough_samples");
+  assert_eq!(result.message(), "pitches() requires at least 1024 samples and there are currently 0. Ensure set_audio_samples() has been called once enough samples are available.");
+  assert_eq!(result.pitches().length(), 0);
+}
+
+#[wasm_bindgen_test]
 fn adding_data() {
   let mut processor = audio_samples_processor::AudioSamplesProcessor::new();
 
-  const SAMPLE_RATE: usize = 44100;
+  const SAMPLE_RATE: usize = 48000;
   const FREQUENCY: f32 = 440.0;
   const DURATION: f32 = 0.2;
   const SAMPLE_SIZE: usize = (SAMPLE_RATE as f32 * DURATION) as usize;
   let sine_wave_samples = test_utils::sin_signal(FREQUENCY, SAMPLE_SIZE, SAMPLE_RATE);
 
-  for i in 0..16 {
+  for i in 0..32 {
     processor.add_samples_chunk(
       sine_wave_samples[(i * 128)..((i + 1) * 128)]
         .iter()
@@ -61,67 +76,58 @@ fn adding_data() {
   }
 
   let mut detector = processor
-    .create_pitch_detector(String::from("McLeod"))
+    .create_pitch_detector(String::from("McLeod"), 2048)
     .unwrap();
-  print_detector_state(&detector);
 
   processor.set_latest_samples_on(&mut detector);
+  print_detector_state(&detector);
 
-  let mut pitches = detector.pitches();
+  let mut result = detector.pitches();
 
   // Generates four pitches (one for each sliding window).
-  assert_eq!(pitches.length(), 4);
+  assert_eq!(result.pitches().length(), 4);
 
-  // Calling again returns nothing.
-  pitches = detector.pitches();
-  assert_eq!(pitches.length(), 0);
-  print_detector_state(&detector);
+  // // Calling again returns nothing.
+  // pitches = detector.pitches();
+  // assert_eq!(pitches.length(), 0);
+  // print_detector_state(&detector);
 
-  // Add more samples
-  for i in 0..2 {
-    processor.add_samples_chunk(
-      sine_wave_samples[(i * 128)..((i + 1) * 128)]
-        .iter()
-        .cloned()
-        .collect(),
-    );
-  }
+  // // Add more samples
+  // for i in 0..4 {
+  //   processor.add_samples_chunk(
+  //     sine_wave_samples[(i * 128)..((i + 1) * 128)]
+  //       .iter()
+  //       .cloned()
+  //       .collect(),
+  //   );
+  // }
 
-  processor.set_latest_samples_on(&mut detector);
-  print_detector_state(&detector);
+  // processor.set_latest_samples_on(&mut detector);
+  // print_detector_state(&detector);
 
-  pitches = detector.pitches();
-  assert_eq!(pitches.length(), 1);
-  print_detector_state(&detector);
+  // pitches = detector.pitches();
+  // assert_eq!(pitches.length(), 1);
+  // print_detector_state(&detector);
 
-  // Try getting more pitches whenm we've exhausted the available samples.
-  pitches = detector.pitches();
-  assert_eq!(pitches.length(), 0);
-  print_detector_state(&detector);
+  // // Try getting more pitches when we've exhausted the available samples.
+  // pitches = detector.pitches();
+  // assert_eq!(pitches.length(), 0);
+  // print_detector_state(&detector);
 
-  // Add lots more samples (more than the internal buffer size)
-  for i in 0..48 {
-    processor.add_samples_chunk(
-      sine_wave_samples[(i * 128)..((i + 1) * 128)]
-        .iter()
-        .cloned()
-        .collect(),
-    );
-  }
+  // // Add lots more samples (more than the internal buffer size)
+  // for i in 0..48 {
+  //   processor.add_samples_chunk(
+  //     sine_wave_samples[(i * 128)..((i + 1) * 128)]
+  //       .iter()
+  //       .cloned()
+  //       .collect(),
+  //   );
+  // }
 
-  processor.set_latest_samples_on(&mut detector);
-  print_detector_state(&detector);
-  pitches = detector.pitches();
-  assert_eq!(pitches.length(), 4);
+  // processor.set_latest_samples_on(&mut detector);
+  // print_detector_state(&detector);
+  // pitches = detector.pitches();
+  // assert_eq!(pitches.length(), 12);
 
-  print_detector_state(&detector);
-
-  // assert_eq!(
-  //   pitches,
-  //   pitch_detector::Pitch {
-  //     t: 0,
-  //     frequency: 441.14816,
-  //     clarity: 0.9018697
-  //   }
-  // );
+  // print_detector_state(&detector);
 }

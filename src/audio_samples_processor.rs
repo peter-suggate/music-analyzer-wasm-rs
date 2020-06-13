@@ -4,7 +4,8 @@ use std::option::*;
 use wasm_bindgen::prelude::*;
 
 const AUDIO_SAMPLES_PER_CHUNK: usize = 128;
-const MIN_CHUNKS_FOR_ANALYSIS: usize = 16;
+const MIN_CHUNKS_FOR_ANALYSIS: usize =
+  pitch_detector::MAX_WINDOW_SIZE * 2 / AUDIO_SAMPLES_PER_CHUNK;
 
 #[wasm_bindgen]
 pub struct AudioSamplesProcessor {
@@ -49,11 +50,11 @@ impl AudioSamplesProcessor {
   pub fn create_pitch_detector(
     &self,
     detector_type: String,
+    window_samples: usize,
   ) -> Option<pitch_detector::PitchDetector> {
-    const WINDOW: usize = 4096;
     Some(pitch_detector::PitchDetector::new(
       detector_type,
-      pitch_detector::make_params(WINDOW),
+      pitch_detector::make_params(window_samples),
     ))
   }
 
@@ -87,7 +88,7 @@ mod tests {
     use super::*;
 
     #[test]
-    #[should_panic(expected = "add_samples() requires 128 samples, instead got 0")]
+    #[should_panic(expected = "add_samples_chunk() requires 128 samples, instead got 0")]
     fn panics_on_empty_samples_vec() {
       AudioSamplesProcessor::new().add_samples_chunk(vec![]);
     }
@@ -164,7 +165,7 @@ mod tests {
     #[test]
     fn returns_one_if_no_samples() {
       let maybe_analyzer =
-        AudioSamplesProcessor::new().create_pitch_detector(String::from("McLeod"));
+        AudioSamplesProcessor::new().create_pitch_detector(String::from("McLeod"), 1024);
       assert_eq!(maybe_analyzer.is_some(), true);
     }
 
@@ -173,7 +174,7 @@ mod tests {
     //     let mut processor = AudioSamplesProcessor::new();
 
     //     const WINDOW: usize = 1024;
-    //     let sine_wave_samples = test_utils::sin_signal(440.0, WINDOW * 2, 44100);
+    //     let sine_wave_samples = test_utils::sin_signal(440.0, WINDOW * 2, 48000);
 
     //     for i in 0..16 {
     //       processor.add_samples_chunk(sine_wave_samples[(i * 128)..((i + 1) * 128)].to_vec());
