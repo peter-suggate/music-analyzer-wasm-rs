@@ -68,7 +68,7 @@ pub struct Pitch {
   pub t: usize,
   pub frequency: f32,
   pub clarity: f32,
-  pub is_onset: bool,
+  pub onset: bool,
 }
 
 fn make_detector(
@@ -234,7 +234,7 @@ impl PitchDetector {
       match optional_pitch {
         Some(pitch) => {
           // We detected a pitch.
-          let is_onset = match self.current_pitch {
+          let onset = match self.current_pitch {
             Some(_current_pitch) => false,
             None => true,
           };
@@ -245,7 +245,7 @@ impl PitchDetector {
             clarity: pitch.clarity,
             frequency: pitch.frequency,
             t: self.time_of_next_unprocessed_sample + index,
-            is_onset: is_onset,
+            onset: onset,
           })
         }
         None => {
@@ -323,7 +323,7 @@ mod tests {
       detector.set_audio_samples(0, sin_signal_samples(440.0, 0.1));
       let pitches = detector.pitches_vec();
 
-      assert_eq!(format!("{:?}", pitches), "[Pitch { t: 512, frequency: 440.36697, clarity: 0.94680345, is_onset: true }, Pitch { t: 1536, frequency: 440.36697, clarity: 0.94702, is_onset: false }, Pitch { t: 2560, frequency: 440.36697, clarity: 0.9463327, is_onset: false }, Pitch { t: 3584, frequency: 440.36697, clarity: 0.9471525, is_onset: false }, Pitch { t: 4608, frequency: 440.36697, clarity: 0.9465997, is_onset: false }]");
+      assert_eq!(format!("{:?}", pitches), "[Pitch { t: 512, frequency: 440.36697, clarity: 0.94680345, onset: true }, Pitch { t: 1536, frequency: 440.36697, clarity: 0.94702, onset: false }, Pitch { t: 2560, frequency: 440.36697, clarity: 0.9463327, onset: false }, Pitch { t: 3584, frequency: 440.36697, clarity: 0.9471525, onset: false }, Pitch { t: 4608, frequency: 440.36697, clarity: 0.9465997, onset: false }]");
     }
 
     #[test]
@@ -333,7 +333,7 @@ mod tests {
       detector.set_audio_samples(0, sin_signal_samples(220.0, 0.1));
       let pitches = detector.pitches_vec();
 
-      assert_eq!(format!("{:?}", pitches), "[Pitch { t: 512, frequency: 220.29074, clarity: 0.894376, is_onset: true }, Pitch { t: 1536, frequency: 221.12888, clarity: 0.89288074, is_onset: false }, Pitch { t: 2560, frequency: 220.72627, clarity: 0.89353347, is_onset: false }, Pitch { t: 3584, frequency: 220.17342, clarity: 0.8946273, is_onset: false }, Pitch { t: 4608, frequency: 220.95581, clarity: 0.89314663, is_onset: false }]");
+      assert_eq!(format!("{:?}", pitches), "[Pitch { t: 512, frequency: 220.29074, clarity: 0.894376, onset: true }, Pitch { t: 1536, frequency: 221.12888, clarity: 0.89288074, onset: false }, Pitch { t: 2560, frequency: 220.72627, clarity: 0.89353347, onset: false }, Pitch { t: 3584, frequency: 220.17342, clarity: 0.8946273, onset: false }, Pitch { t: 4608, frequency: 220.95581, clarity: 0.89314663, onset: false }]");
     }
 
     #[test]
@@ -369,7 +369,7 @@ mod tests {
       detector.set_audio_samples(0, sin_signal_samples(220.0, 0.1));
       let pitches = detector.pitches_vec();
 
-      assert_eq!(pitches[0].is_onset, true);
+      assert_eq!(pitches[0].onset, true);
     }
 
     #[test]
@@ -379,7 +379,7 @@ mod tests {
       detector.set_audio_samples(0, sin_signal_samples(220.0, 0.1));
       let pitches = detector.pitches_vec();
 
-      assert_eq!(pitches[1].is_onset, false);
+      assert_eq!(pitches[1].onset, false);
     }
 
     #[test]
@@ -404,7 +404,7 @@ mod tests {
       );
       let pitches = detector.pitches_vec();
 
-      assert_eq!(pitches[0].is_onset, true);
+      assert_eq!(pitches[0].onset, true);
     }
   }
 }

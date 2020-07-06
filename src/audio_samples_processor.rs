@@ -18,8 +18,6 @@ pub struct AudioSamplesProcessor {
 impl AudioSamplesProcessor {
   pub fn new() -> AudioSamplesProcessor {
     AudioSamplesProcessor {
-      // // Matching the web audio worklet chunk size
-      // chunk_size: AUDIO_SAMPLES_PER_CHUNK,
       max_stored_samples: MIN_SAMPLES_FOR_ANALYSIS,
 
       time_of_last_added_sample: 0,
@@ -86,8 +84,6 @@ impl AudioSamplesProcessor {
 }
 
 #[cfg(test)]
-use super::test_utils;
-
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -103,7 +99,7 @@ mod tests {
 
     #[test]
     fn adds_samples_if_of_correct_count() {
-      AudioSamplesProcessor::new().add_samples_chunk(vec![0.0; 128]);
+      AudioSamplesProcessor::new().add_samples_chunk(vec![0.0; AUDIO_SAMPLES_PER_CHUNK]);
     }
 
     //   #[test]
