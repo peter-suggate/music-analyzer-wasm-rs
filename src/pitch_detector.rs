@@ -138,6 +138,13 @@ impl PitchesResult {
   }
 }
 
+// A macro to provide `println!(..)`-style syntax for `console.log` logging.
+macro_rules! console_log {
+  ( $( $t:tt )* ) => {
+      web_sys::console::log_1(&format!( $( $t )* ).into());
+  }
+}
+
 #[wasm_bindgen]
 impl PitchDetector {
   pub fn new(detector_type: String, params: Params) -> PitchDetector {
@@ -162,7 +169,8 @@ impl PitchDetector {
   }
 
   pub fn set_audio_samples(&mut self, time_of_first_sample: usize, audio_samples: Vec<f32>) {
-    println!("audio_samples.len() {}", audio_samples.len());
+    // console_log!("audio_samples.len() {}", audio_samples.len());
+
     if audio_samples.len() < self.params.window {
       panic!(
         "pitches() insufficient audio samples to analyze. Got {}, need: {} samples",
