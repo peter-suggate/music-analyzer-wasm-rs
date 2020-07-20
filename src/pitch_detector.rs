@@ -36,13 +36,13 @@ pub struct Params {
   clarity_threshold: f32,
 }
 
-pub fn make_params(window: usize) -> Params {
+pub fn make_params(window: usize, power_threshold: f32, clarity_threshold: f32) -> Params {
   Params {
     window,
     sample_rate: 48000,
     padding: window / 2,
-    power_threshold: 0.25,
-    clarity_threshold: 0.6,
+    power_threshold,
+    clarity_threshold,
   }
 }
 
@@ -293,13 +293,22 @@ use super::test_utils;
 mod tests {
   use super::*;
 
+  fn make_test_params(window: usize) -> Params {
+    Params {
+      window,
+      sample_rate: 48000,
+      padding: window / 2,
+      power_threshold: 0.25,
+      clarity_threshold: 0.6,
+    }
+  }
   mod adding_samples {
     use super::*;
 
     #[test]
     #[should_panic(expected = "pitches() insufficient audio samples to analyze")]
     fn panics_on_insufficient_samples() {
-      PitchDetector::new(String::from("McLeod"), make_params(2)).set_audio_samples(0, vec![]);
+      PitchDetector::new(String::from("McLeod"), make_test_params(2)).set_audio_samples(0, vec![]);
     }
   }
 
@@ -320,13 +329,14 @@ mod tests {
     fn panics_on_missing_detector_type() {
       PitchDetector::new(
         String::from("Not a real pitch detector type"),
-        make_params(4),
+        make_test_params(4),
       );
     }
 
     #[test]
     fn detects_pitch_autocorrelation() {
-      let mut detector = PitchDetector::new(String::from("Autocorrelation"), make_params(WINDOW));
+      let mut detector =
+        PitchDetector::new(String::from("Autocorrelation"), make_test_params(WINDOW));
 
       detector.set_audio_samples(0, sin_signal_samples(440.0, 0.1));
       let pitches = detector.pitches_vec();
@@ -336,7 +346,7 @@ mod tests {
 
     #[test]
     fn detects_pitch_mcleod() {
-      let mut detector = PitchDetector::new(String::from("McLeod"), make_params(WINDOW));
+      let mut detector = PitchDetector::new(String::from("McLeod"), make_test_params(WINDOW));
 
       detector.set_audio_samples(0, sin_signal_samples(220.0, 0.1));
       let pitches = detector.pitches_vec();
@@ -346,12 +356,15 @@ mod tests {
 
     #[test]
     fn returns_only_new_pitches() {
-      let mut detector = PitchDetector::new(String::from("McLeod"), make_params(2048));
+      let mut detector = PitchDetector::new(String::from("McLeod"), make_test_params(2048));
 
       detector.set_audio_samples(0, sin_signal_samples(220.0, 0.1));
 
       // Get the available pitches.
+      /*let initial_pitches = */
       detector.pitches_vec();
+      // println!("{:?}", initial_pitches);
+
       println!(
         "detector.index_of_next_unprocessed_sample {}",
         detector.index_of_next_unprocessed_sample()
@@ -359,7 +372,6 @@ mod tests {
 
       // Call again. There should be no more to return.
       let pitches = detector.pitches_vec();
-
       assert_eq!(pitches.len(), 0);
 
       detector.set_audio_samples(
@@ -372,7 +384,7 @@ mod tests {
 
     #[test]
     fn first_pitch_is_an_onset() {
-      let mut detector = PitchDetector::new(String::from("McLeod"), make_params(WINDOW));
+      let mut detector = PitchDetector::new(String::from("McLeod"), make_test_params(WINDOW));
 
       detector.set_audio_samples(0, sin_signal_samples(220.0, 0.1));
       let pitches = detector.pitches_vec();
@@ -382,7 +394,7 @@ mod tests {
 
     #[test]
     fn second_pitch_is_not_an_onset() {
-      let mut detector = PitchDetector::new(String::from("McLeod"), make_params(WINDOW));
+      let mut detector = PitchDetector::new(String::from("McLeod"), make_test_params(WINDOW));
 
       detector.set_audio_samples(0, sin_signal_samples(220.0, 0.1));
       let pitches = detector.pitches_vec();
@@ -392,7 +404,7 @@ mod tests {
 
     #[test]
     fn first_pitch_after_silence_is_an_onset() {
-      let mut detector = PitchDetector::new(String::from("McLeod"), make_params(WINDOW));
+      let mut detector = PitchDetector::new(String::from("McLeod"), make_test_params(WINDOW));
 
       // Get first round of pitches.
       detector.set_audio_samples(0, sin_signal_samples(220.0, 0.1));

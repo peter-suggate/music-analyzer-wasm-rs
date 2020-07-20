@@ -49,10 +49,12 @@ impl AudioSamplesProcessor {
     &self,
     detector_type: String,
     window_samples: usize,
+    power_threshold: f32,
+    clarity_threshold: f32,
   ) -> Option<pitch_detector::PitchDetector> {
     Some(pitch_detector::PitchDetector::new(
       detector_type,
-      pitch_detector::make_params(window_samples),
+      pitch_detector::make_params(window_samples, power_threshold, clarity_threshold),
     ))
   }
 
