@@ -3,12 +3,11 @@ use circular_queue::CircularQueue;
 use std::option::*;
 use wasm_bindgen::prelude::*;
 
-const MIN_SAMPLES_FOR_ANALYSIS: usize = pitch_detector::MAX_WINDOW_SIZE * 2;
+const CAPACITY: usize = pitch_detector::MAX_WINDOW_SIZE * 2;
 
 #[wasm_bindgen]
 pub struct AudioSamplesProcessor {
-  // pub chunk_size: usize,
-  max_stored_samples: usize,
+  pub chunk_size: usize,
   time_of_last_added_sample: usize,
   recent_audio_sample_f32s: CircularQueue<f32>,
 }
@@ -17,22 +16,22 @@ pub struct AudioSamplesProcessor {
 impl AudioSamplesProcessor {
   pub fn new() -> AudioSamplesProcessor {
     AudioSamplesProcessor {
-      max_stored_samples: MIN_SAMPLES_FOR_ANALYSIS,
+      chunk_size: 128,
 
       time_of_last_added_sample: 0,
 
-      recent_audio_sample_f32s: CircularQueue::with_capacity(MIN_SAMPLES_FOR_ANALYSIS),
+      recent_audio_sample_f32s: CircularQueue::with_capacity(CAPACITY),
     }
   }
 
   pub fn add_samples_chunk(&mut self, sample_f32s: Vec<f32>) {
-    // if sample_f32s.len() != self.chunk_size {
-    //   panic!(format!(
-    //     "add_samples_chunk() requires {} samples, instead got {}",
-    //     self.chunk_size,
-    //     sample_f32s.len()
-    //   ));
-    // }
+    if sample_f32s.len() != self.chunk_size {
+      panic!(format!(
+        "add_samples_chunk() requires {} samples, instead got {}",
+        self.chunk_size,
+        sample_f32s.len()
+      ));
+    }
 
     self.time_of_last_added_sample += sample_f32s.len();
     for sample in sample_f32s.into_iter() {
@@ -40,8 +39,8 @@ impl AudioSamplesProcessor {
     }
   }
 
-  pub fn has_sufficient_samples(&self) -> bool {
-    self.recent_audio_sample_f32s.len() >= self.max_stored_samples
+  pub fn has_sufficient_samples(&self, detector: &pitch_detector::PitchDetector) -> bool {
+    self.recent_audio_sample_f32s.len() >= detector.params.window
   }
 
   pub fn create_pitch_detector(

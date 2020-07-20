@@ -11,20 +11,14 @@ extern crate web_sys;
 // wasm_bindgen_test_configure!(run_in_browser);
 
 // A macro to provide `println!(..)`-style syntax for `console.log` logging.
-macro_rules! console_log {
+macro_rules! console_log_test {
   ( $( $t:tt )* ) => {
       web_sys::console::log_1(&format!( $( $t )* ).into());
   }
 }
 
-// macro_rules! console_log {
-//   // Note that this is using the `log` function imported above during
-//   // `bare_bones`
-//   ($($t:tt)*) => (web_sys::console::log(&format_args!($($t)*).to_string()))
-// }
-
 fn print_detector_state(detector: &pitch_detector::PitchDetector) {
-  console_log!(
+  console_log_test!(
     "time_of_first_sample {} time_of_next_unprocessed_sample {} index_of_next_unprocessed_sample {} num_audio_samples {}",
     detector.time_of_first_sample,
     detector.time_of_next_unprocessed_sample,

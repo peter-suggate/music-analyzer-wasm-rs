@@ -30,7 +30,7 @@ fn fill_chunk(signal: &[f32], start: usize, window: usize, output: &mut [f32]) {
 #[derive(Copy, Clone)]
 pub struct Params {
   sample_rate: usize,
-  window: usize,
+  pub window: usize,
   padding: usize,
   power_threshold: f32,
   clarity_threshold: f32,
@@ -53,7 +53,7 @@ pub fn make_params(
 
 #[wasm_bindgen]
 pub struct PitchDetector {
-  params: Params,
+  pub params: Params,
   pub time_of_first_sample: usize,
   pub time_of_next_unprocessed_sample: usize,
 
@@ -143,12 +143,12 @@ impl PitchesResult {
   }
 }
 
-// A macro to provide `println!(..)`-style syntax for `console.log` logging.
-macro_rules! console_log {
-  ( $( $t:tt )* ) => {
-      web_sys::console::log_1(&format!( $( $t )* ).into());
-  }
-}
+// // A macro to provide `println!(..)`-style syntax for `console.log` logging.
+// macro_rules! console_log {
+//   ( $( $t:tt )* ) => {
+//       web_sys::console::log_1(&format!( $( $t )* ).into());
+//   }
+// }
 
 #[wasm_bindgen]
 impl PitchDetector {
