@@ -15,8 +15,8 @@ default = ["console_error_panic_hook"]
 
 [dependencies]
 serde_derive = "^1.0.59"
-js-sys = "0.3.40"
-circular-queue = "0.2.4"
+js-sys = "0.3.42"
+circular-queue = "0.2.5"
 # pitch-detection = { git = "https://github.com/peter-suggate/pitch-detection" }
 pitch-detection = { path = "../pitch-detection" }
 
@@ -46,7 +46,7 @@ version = "0.3.40"
 features = [ "console" ]
 
 [dev-dependencies]
-wasm-bindgen-test = "0.3.13"
+wasm-bindgen-test = "0.3.15"
 
 [profile.release]
 # Tell `rustc` to optimize for small code size.
