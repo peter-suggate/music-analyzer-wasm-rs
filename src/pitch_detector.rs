@@ -36,10 +36,15 @@ pub struct Params {
   clarity_threshold: f32,
 }
 
-pub fn make_params(window: usize, power_threshold: f32, clarity_threshold: f32) -> Params {
+pub fn make_params(
+  window: usize,
+  sample_rate: usize,
+  power_threshold: f32,
+  clarity_threshold: f32,
+) -> Params {
   Params {
     window,
-    sample_rate: 48000,
+    sample_rate,
     padding: window / 2,
     power_threshold,
     clarity_threshold,

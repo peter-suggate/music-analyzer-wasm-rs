@@ -3,7 +3,6 @@ use circular_queue::CircularQueue;
 use std::option::*;
 use wasm_bindgen::prelude::*;
 
-const AUDIO_SAMPLES_PER_CHUNK: usize = 128;
 const MIN_SAMPLES_FOR_ANALYSIS: usize = pitch_detector::MAX_WINDOW_SIZE * 2;
 
 #[wasm_bindgen]
@@ -49,12 +48,18 @@ impl AudioSamplesProcessor {
     &self,
     detector_type: String,
     window_samples: usize,
+    sample_rate: usize,
     power_threshold: f32,
     clarity_threshold: f32,
   ) -> Option<pitch_detector::PitchDetector> {
     Some(pitch_detector::PitchDetector::new(
       detector_type,
-      pitch_detector::make_params(window_samples, power_threshold, clarity_threshold),
+      pitch_detector::make_params(
+        window_samples,
+        sample_rate,
+        power_threshold,
+        clarity_threshold,
+      ),
     ))
   }
 
@@ -89,6 +94,8 @@ impl AudioSamplesProcessor {
 #[cfg(test)]
 mod tests {
   use super::*;
+
+  const AUDIO_SAMPLES_PER_CHUNK: usize = 128;
 
   mod adding_samples {
     use super::*;
