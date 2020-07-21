@@ -69,12 +69,7 @@ impl AudioSamplesProcessor {
   pub fn set_latest_samples_on(&self, detector: &mut pitch_detector::PitchDetector) {
     detector.set_audio_samples(
       self.get_time_of_first_sample(),
-      self
-        .recent_audio_sample_f32s
-        .iter()
-        .rev()
-        .cloned()
-        .collect(),
+      self.recent_audio_sample_f32s.asc_iter().cloned().collect(),
     )
   }
 

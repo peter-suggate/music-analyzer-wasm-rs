@@ -1,8 +1,9 @@
+#[macro_use]
+pub mod macros;
 pub mod audio_samples_processor;
 pub mod pitch_detector;
 pub mod test_utils;
 pub mod timeline;
-
 mod utils;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
