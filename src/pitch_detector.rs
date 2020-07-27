@@ -70,7 +70,7 @@ pub struct PitchDetector {
 #[wasm_bindgen]
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub struct Pitch {
-  pub t: usize,
+  pub t: f32,
   pub frequency: f32,
   pub clarity: f32,
   pub onset: bool,
@@ -247,10 +247,12 @@ impl PitchDetector {
 
           self.current_pitch = Some(pitch.frequency);
 
+          let sample_time = (self.time_of_next_unprocessed_sample + index) as f32;
+
           pitches.push(Pitch {
             clarity: pitch.clarity,
             frequency: pitch.frequency,
-            t: self.time_of_next_unprocessed_sample + index,
+            t: sample_time / (self.params.sample_rate as f32),
             onset: onset,
           })
         }
@@ -339,7 +341,7 @@ mod tests {
       detector.set_audio_samples(0, sin_signal_samples(440.0, 0.1));
       let pitches = detector.pitches_vec();
 
-      assert_eq!(format!("{:?}", pitches), "[Pitch { t: 512, frequency: 440.36697, clarity: 0.94680345, onset: true }, Pitch { t: 1536, frequency: 440.36697, clarity: 0.94702, onset: false }, Pitch { t: 2560, frequency: 440.36697, clarity: 0.9463327, onset: false }, Pitch { t: 3584, frequency: 440.36697, clarity: 0.9471525, onset: false }, Pitch { t: 4608, frequency: 440.36697, clarity: 0.9465997, onset: false }]");
+      assert_eq!(format!("{:?}", pitches), "[Pitch { t: 0.010666667, frequency: 440.36697, clarity: 0.94680345, onset: true }, Pitch { t: 0.032, frequency: 440.36697, clarity: 0.94702, onset: false }, Pitch { t: 0.053333335, frequency: 440.36697, clarity: 0.9463327, onset: false }, Pitch { t: 0.074666664, frequency: 440.36697, clarity: 0.9471525, onset: false }, Pitch { t: 0.096, frequency: 440.36697, clarity: 0.9465997, onset: false }]");
     }
 
     #[test]
@@ -349,7 +351,7 @@ mod tests {
       detector.set_audio_samples(0, sin_signal_samples(220.0, 0.1));
       let pitches = detector.pitches_vec();
 
-      assert_eq!(format!("{:?}", pitches), "[Pitch { t: 512, frequency: 220.29074, clarity: 0.894376, onset: true }, Pitch { t: 1536, frequency: 221.12888, clarity: 0.89288074, onset: false }, Pitch { t: 2560, frequency: 220.72627, clarity: 0.89353347, onset: false }, Pitch { t: 3584, frequency: 220.17342, clarity: 0.8946273, onset: false }, Pitch { t: 4608, frequency: 220.95581, clarity: 0.89314663, onset: false }]");
+      assert_eq!(format!("{:?}", pitches), "[Pitch { t: 0.010666667, frequency: 220.29074, clarity: 0.894376, onset: true }, Pitch { t: 0.032, frequency: 221.12888, clarity: 0.89288074, onset: false }, Pitch { t: 0.053333335, frequency: 220.72627, clarity: 0.89353347, onset: false }, Pitch { t: 0.074666664, frequency: 220.17342, clarity: 0.8946273, onset: false }, Pitch { t: 0.096, frequency: 220.95581, clarity: 0.89314663, onset: false }]");
     }
 
     #[test]
