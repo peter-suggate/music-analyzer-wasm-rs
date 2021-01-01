@@ -37,13 +37,13 @@ fn print_detector_state(detector: &pitch_detector::PitchDetector) {
 
 #[wasm_bindgen_test]
 fn returns_error_if_no_samples() {
-  let mut processor = audio_samples_processor::AudioSamplesProcessor::new();
+  let processor = audio_samples_processor::AudioSamplesProcessor::new();
 
   let mut detector = processor
-    .create_pitch_detector(String::from("McLeod"), 1024)
+    .create_pitch_detector(String::from("McLeod"), 1024, 44100, 0.7, 0.6)
     .unwrap();
 
-  let mut result = detector.pitches();
+  let result = detector.pitches();
 
   assert_eq!(result.code(), "not_enough_samples");
   assert_eq!(result.message(), "pitches() requires at least 1024 samples and there are currently 0. Ensure set_audio_samples() has been called once enough samples are available.");
@@ -70,13 +70,13 @@ fn adding_data() {
   }
 
   let mut detector = processor
-    .create_pitch_detector(String::from("McLeod"), 2048)
+    .create_pitch_detector(String::from("McLeod"), 2048, 44100, 0.7, 0.6)
     .unwrap();
 
   processor.set_latest_samples_on(&mut detector);
   print_detector_state(&detector);
 
-  let mut result = detector.pitches();
+  let result = detector.pitches();
 
   // Generates four pitches (one for each sliding window).
   assert_eq!(result.pitches().length(), 4);

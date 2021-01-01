@@ -17,8 +17,8 @@ default = ["console_error_panic_hook"]
 serde_derive = "^1.0.59"
 js-sys = "0.3.42"
 circular-queue = "0.2.5"
-# pitch-detection = { git = "https://github.com/peter-suggate/pitch-detection" }
-pitch-detection = { path = "../pitch-detection" }
+pitch-detection = { git = "https://github.com/peter-suggate/pitch-detection" }
+# pitch-detection = { path = "../pitch-detection" }
 
 # The `console_error_panic_hook` crate provides better debugging of panics by
 # logging them with `console.error`. This is great for development, but requires
@@ -53,3 +53,8 @@ wasm-bindgen-test = "0.3.15"
 opt-level = "s"
 # Show names of functions when debugging webassembly.
 debug = true
+
+# Workaround validation error produced by wasm-opt with WASM.
+# https://github.com/rustwasm/wasm-pack/issues/886
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = ["-Oz", "--enable-mutable-globals"]

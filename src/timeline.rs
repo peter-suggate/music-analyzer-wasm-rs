@@ -53,7 +53,7 @@ impl Series {
     self.events.push(SeriesEvent {
       time_from_start_ms: event_time,
       pitch_hz,
-    })
+    });
   }
 
   fn time_of_most_recent_event(&self) -> Option<EventTime> {
